@@ -220,12 +220,60 @@
     repulgue: { 'tradicional': 'tradicional', 'de corazones': 'corazones', 'de estrellas': 'estrellas' }
   };
 
-  function localImagePath({ masa, relleno, coccion, repulgue }) {
-    const m = localKeyMap.masa[masa];
-    const r = localKeyMap.relleno[relleno];
-    const c = localKeyMap.coccion[coccion];
-    const p = localKeyMap.repulgue[repulgue];
+  function localImagePath(state) {
+    const m = localKeyMap.masa[state.masa];
+    const r = localKeyMap.relleno[state.relleno];
+    const c = localKeyMap.coccion[state.coccion];
+    const p = localKeyMap.repulgue[state.repulgue];
     return `img/empanadas/${m}__${r}__${c}__${p}.jpg`;
+  }
+
+  function buildImageCandidates(sel) {
+    const masas = ['clásica', 'integral', 'de maíz'];
+    const rellenos = ['carne', 'pollo', 'queso', 'verduras'];
+    const cocciones = ['al horno', 'frita'];
+    const repulgues = ['tradicional', 'de corazones', 'de estrellas'];
+    const combos = [];
+    const seen = new Set();
+    const push = (s) => {
+      const path = localImagePath(s);
+      if (!seen.has(path)) { seen.add(path); combos.push({ path, state: { ...s } }); }
+    };
+    push(sel);
+    repulgues.forEach(p => push({ ...sel, repulgue: p }));
+    masas.forEach(m => repulgues.forEach(p => push({ masa: m, relleno: sel.relleno, coccion: sel.coccion, repulgue: p })));
+    masas.forEach(m => cocciones.forEach(c => repulgues.forEach(p => push({ masa: m, relleno: sel.relleno, coccion: c, repulgue: p }))));
+    masas.forEach(m => rellenos.forEach(r => cocciones.forEach(c => repulgues.forEach(p => push({ masa: m, relleno: r, coccion: c, repulgue: p })))));
+    return combos;
+  }
+
+  function tryLoadImage(candidates, index, alt, summaryBase, exactPath) {
+    if (index >= candidates.length) {
+      buildPreview.innerHTML = `
+        <div class="preview-placeholder">
+          <div class="empanada-art" aria-hidden="true">🥟</div>
+          <p>No encontré la imagen para esta combinación todavía. La generación puede seguir en curso; inténtalo de nuevo en unos minutos.</p>
+        </div>`;
+      buildCookBtn.disabled = false;
+      buildCookBtn.textContent = 'Ver empanada';
+      return;
+    }
+    const { path } = candidates[index];
+    const img = new Image();
+    img.alt = alt;
+    img.onload = () => {
+      buildPreview.innerHTML = `
+        <figure class="image-frame">
+          <img src="${path}" alt="${alt}">
+        </figure>`;
+      if (path !== exactPath) {
+        buildSummary.textContent = summaryBase + ' (mostrando una imagen similar mientras se completa la generación).';
+      }
+      buildCookBtn.disabled = false;
+      buildCookBtn.textContent = 'Ver empanada';
+    };
+    img.onerror = () => tryLoadImage(candidates, index + 1, alt, summaryBase, exactPath);
+    img.src = path;
   }
 
   function describeEmpanada() {
@@ -237,36 +285,21 @@
       return;
     }
 
-    const imageUrl = localImagePath(buildState);
+    const exactPath = localImagePath(buildState);
+    const candidates = buildImageCandidates(buildState);
+    const alt = `Empanada de ${relleno} con masa ${masa}, ${coccion} y repulgue ${repulgue}`;
+    const summaryBase = `Empanada de ${relleno} con masa ${masa}, ${coccion} y repulgue ${repulgue}.`;
+
     buildCookBtn.disabled = true;
     buildCookBtn.textContent = 'Preparando...';
-    buildSummary.textContent = `Empanada de ${relleno} con masa ${masa}, ${coccion} y repulgue ${repulgue}.`;
+    buildSummary.textContent = summaryBase;
     buildPreview.innerHTML = `
       <div class="image-frame loading">
         <div class="loader" aria-hidden="true"></div>
         <p>Preparando tu empanada...</p>
       </div>`;
 
-    const img = new Image();
-    img.alt = `Empanada de ${relleno} con masa ${masa}, ${coccion} y repulgue ${repulgue}`;
-    img.onload = () => {
-      buildPreview.innerHTML = `
-        <figure class="image-frame">
-          <img src="${imageUrl}" alt="${img.alt}">
-        </figure>`;
-      buildCookBtn.disabled = false;
-      buildCookBtn.textContent = 'Ver empanada';
-    };
-    img.onerror = () => {
-      buildPreview.innerHTML = `
-        <div class="preview-placeholder">
-          <div class="empanada-art" aria-hidden="true">🥟</div>
-          <p>No encontré la imagen para esta combinación todavía. Asegúrate de que la carpeta <strong>img/empanadas</strong> tenga las imágenes generadas.</p>
-        </div>`;
-      buildCookBtn.disabled = false;
-      buildCookBtn.textContent = 'Ver empanada';
-    };
-    img.src = imageUrl;
+    tryLoadImage(candidates, 0, alt, summaryBase, exactPath);
   }
 
   document.getElementById('build-cook').addEventListener('click', describeEmpanada);
