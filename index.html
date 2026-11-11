@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mundo Empanada - Juegos para Niños</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand" role="button" tabindex="0" data-screen="home" aria-label="Ir al inicio">
+      <span class="logo" aria-hidden="true">🥟</span>
+      <span>Mundo Empanada</span>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn" data-screen="home">Inicio</button>
+      <button class="nav-btn" data-screen="origen">Origen</button>
+      <button class="nav-btn" data-screen="trivia">Trivia</button>
+      <button class="nav-btn" data-screen="memoria">Memoria</button>
+      <button class="nav-btn" data-screen="arma">Arma tu empanada</button>
+      <button class="nav-btn" data-screen="vf">V o F</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="screen-home" class="screen active" aria-labelledby="home-title">
+      <div class="hero card">
+        <div>
+          <h1 id="home-title">¡Bienvenidos a Mundo Empanada!</h1>
+          <p>Aprende de dónde vienen las empanadas y juega con desafíos divertidos para niños y niñas.</p>
+          <div class="hero-actions">
+            <button class="primary" data-screen="origen">Descubrir su origen</button>
+            <button class="secondary" data-screen="trivia">Jugar trivia</button>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">🥟🌎👩‍🍳</div>
+      </div>
+
+      <h2>Elige un juego</h2>
+      <div class="grid cards">
+        <article class="card game-card">
+          <h3>🗺️ ¿De dónde vienen?</h3>
+          <p>Un viaje interactivo por la historia de las empanadas en el mundo.</p>
+          <button class="primary" data-screen="origen">Explorar</button>
+        </article>
+        <article class="card game-card">
+          <h3>❓ Trivia Empanadera</h3>
+          <p>Responde preguntas y suma puntos. ¿Cuánto sabes?</p>
+          <button class="primary" data-screen="trivia">Jugar</button>
+        </article>
+        <article class="card game-card">
+          <h3>🧠 Memoria de Empanadas</h3>
+          <p>Encuentra las parejas iguales antes de que se acaben los intentos.</p>
+          <button class="primary" data-screen="memoria">Jugar</button>
+        </article>
+        <article class="card game-card">
+          <h3>👩‍🍳 Arma tu empanada</h3>
+          <p>Elige masa, relleno y repulgue para crear tu empanada perfecta.</p>
+          <button class="primary" data-screen="arma">Crear</button>
+        </article>
+        <article class="card game-card">
+          <h3>✅ Verdadero o Falso</h3>
+          <p>Responde rápido y aprende datos curiosos.</p>
+          <button class="primary" data-screen="vf">Jugar</button>
+        </article>
+      </div>
+    </section>
+
+    <section id="screen-origen" class="screen" aria-labelledby="origen-title">
+      <div class="section-header">
+        <h1 id="origen-title">¿De dónde vienen las empanadas?</h1>
+        <p>Las empanadas tienen una historia larga y viajera. Toca cada tarjeta para descubrir más.</p>
+      </div>
+      <div class="timeline grid">
+        <button class="card info-card" data-info="antiguo">
+          <h3>1. Raíces antiguas</h3>
+          <p>Hace muchos siglos, en Medio Oriente y el Mediterráneo, ya existían masas rellenas parecidas, como el <em>sambusak</em>.</p>
+          <span class="hint">Toca para saber más</span>
+        </button>
+        <button class="card info-card" data-info="espana">
+          <h3>2. España y Galicia</h3>
+          <p>En España se popularizó la empanada, especialmente la empanada gallega, grande y cortada en porciones.</p>
+          <span class="hint">Toca para saber más</span>
+        </button>
+        <button class="card info-card" data-info="america">
+          <h3>3. Viaje a América</h3>
+          <p>Con los viajes desde España, la receta llegó a América y cada lugar la adaptó con sus ingredientes.</p>
+          <span class="hint">Toca para saber más</span>
+        </button>
+        <button class="card info-card" data-info="variedades">
+          <h3>4. Muchas variedades</h3>
+          <p>Hoy hay empanadas al horno o fritas, dulces o saladas, en países como Argentina, Chile, Colombia, México y muchos más.</p>
+          <span class="hint">Toca para saber más</span>
+        </button>
+      </div>
+      <div id="origen-detail" class="card detail" aria-live="polite">
+        <h3>Dato curioso</h3>
+        <p id="origen-detail-text">Selecciona una tarjeta para ver un dato curioso sobre la historia de las empanadas.</p>
+      </div>
+    </section>
+
+    <section id="screen-trivia" class="screen" aria-labelledby="trivia-title">
+      <div class="section-header">
+        <h1 id="trivia-title">Trivia Empanadera</h1>
+        <p>Elige la respuesta correcta. ¡Cada acierto suma 10 puntos!</p>
+      </div>
+      <div class="card game-panel">
+        <div class="status-row">
+          <div>Puntaje: <strong id="trivia-score">0</strong></div>
+          <div>Pregunta: <strong id="trivia-progress">1/1</strong></div>
+        </div>
+        <div id="trivia-question" class="question"></div>
+        <div id="trivia-options" class="options"></div>
+        <div id="trivia-feedback" class="feedback" aria-live="polite"></div>
+        <div class="actions">
+          <button id="trivia-next" class="primary" disabled>Siguiente</button>
+          <button id="trivia-restart" class="secondary">Reiniciar</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-memoria" class="screen" aria-labelledby="memoria-title">
+      <div class="section-header">
+        <h1 id="memoria-title">Memoria de Empanadas</h1>
+        <p>Encuentra todas las parejas. Tienes movimientos limitados, ¡piensa bien!</p>
+      </div>
+      <div class="card game-panel">
+        <div class="status-row">
+          <div>Movimientos: <strong id="memory-moves">0</strong></div>
+          <div>Parejas: <strong id="memory-pairs">0/6</strong></div>
+          <div>Restantes: <strong id="memory-left">18</strong></div>
+        </div>
+        <div id="memory-board" class="memory-board" aria-label="Tablero de memoria"></div>
+        <div id="memory-feedback" class="feedback" aria-live="polite"></div>
+        <div class="actions">
+          <button id="memory-restart" class="primary">Nueva partida</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-arma" class="screen" aria-labelledby="arma-title">
+      <div class="section-header">
+        <h1 id="arma-title">Arma tu empanada</h1>
+        <p>Elige una opción de cada paso y crea una imagen real de tu empanada.</p>
+      </div>
+      <div class="builder-wrap">
+        <div class="builder-layout">
+          <div class="card builder-step">
+            <h3>1. Masa</h3>
+            <p class="step-hint">La base de tu empanada</p>
+            <div class="choice-group" data-group="masa">
+              <button class="choice" data-value="clásica">Clásica</button>
+              <button class="choice" data-value="integral">Integral</button>
+              <button class="choice" data-value="de maíz">De maíz</button>
+            </div>
+          </div>
+          <div class="card builder-step">
+            <h3>2. Relleno</h3>
+            <p class="step-hint">El sabor principal</p>
+            <div class="choice-group" data-group="relleno">
+              <button class="choice" data-value="carne">Carne</button>
+              <button class="choice" data-value="pollo">Pollo</button>
+              <button class="choice" data-value="queso">Queso</button>
+              <button class="choice" data-value="verduras">Verduras</button>
+            </div>
+          </div>
+          <div class="card builder-step">
+            <h3>3. Cocción</h3>
+            <p class="step-hint">Cómo la vas a cocinar</p>
+            <div class="choice-group" data-group="coccion">
+              <button class="choice" data-value="al horno">Al horno</button>
+              <button class="choice" data-value="frita">Frita</button>
+            </div>
+          </div>
+          <div class="card builder-step">
+            <h3>4. Repulgue</h3>
+            <p class="step-hint">El borde decorado</p>
+            <div class="choice-group" data-group="repulgue">
+              <button class="choice" data-value="tradicional">Tradicional</button>
+              <button class="choice" data-value="de corazones">De corazones</button>
+              <button class="choice" data-value="de estrellas">De estrellas</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card result-panel builder-result">
+          <h3>Tu creación</h3>
+          <div id="build-preview" class="build-preview" aria-live="polite">
+            <div class="preview-placeholder">
+              <div class="empanada-art" aria-hidden="true">🥟</div>
+              <p>Elige tus ingredientes y pulsa <strong>“Crear imagen”</strong> para ver tu empanada de verdad.</p>
+            </div>
+          </div>
+          <div id="build-summary" class="build-summary" aria-live="polite"></div>
+          <div class="actions">
+            <button id="build-cook" class="primary">Crear imagen</button>
+            <button id="build-reset" class="secondary">Limpiar</button>
+          </div>
+          <p class="image-note">La imagen se genera con IA a partir de tu receta.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-vf" class="screen" aria-labelledby="vf-title">
+      <div class="section-header">
+        <h1 id="vf-title">Verdadero o Falso</h1>
+        <p>Lee la afirmación y decide si es verdadera o falsa.</p>
+      </div>
+      <div class="card game-panel">
+        <div class="status-row">
+          <div>Puntaje: <strong id="vf-score">0</strong></div>
+          <div>Ronda: <strong id="vf-progress">1/1</strong></div>
+        </div>
+        <div id="vf-statement" class="question"></div>
+        <div class="options vf-options">
+          <button id="vf-true" class="primary">Verdadero</button>
+          <button id="vf-false" class="secondary">Falso</button>
+        </div>
+        <div id="vf-feedback" class="feedback" aria-live="polite"></div>
+        <div class="actions">
+          <button id="vf-next" class="primary" disabled>Siguiente</button>
+          <button id="vf-restart" class="secondary">Reiniciar</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Hecho con cariño para aprender y jugar. 🥟
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
