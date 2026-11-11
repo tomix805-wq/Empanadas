@@ -213,108 +213,86 @@
     });
   });
 
-  function renderEmpanadaSVG({ masa, relleno, coccion, repulgue }) {
-    const masaColors = {
-      'clásica': { base: '#e8c178', shadow: '#c9963b', edge: '#b8832e', highlight: '#f6ddb0' },
-      'integral': { base: '#c9a46a', shadow: '#9a7440', edge: '#866233', highlight: '#e3c89a' },
-      'de maíz': { base: '#f2c94c', shadow: '#d4a017', edge: '#b8860b', highlight: '#fde68a' }
-    };
-    const rellenoColors = {
-      'carne': ['#7b3f2b', '#a65b3d', '#c97a5a'],
-      'pollo': ['#e0b07a', '#f3d3a3', '#fff1d6'],
-      'queso': ['#f6c453', '#ffe08a', '#fff6cc'],
-      'verduras': ['#5fa35f', '#d96b5c', '#f2c94c']
-    };
-    const cook = coccion === 'frita'
-      ? { overlay: 'rgba(140,70,10,0.18)', shine: 'rgba(255,255,255,0.18)', spots: true }
-      : { overlay: 'rgba(120,70,20,0.08)', shine: 'rgba(255,255,255,0.08)', spots: false };
+  const localKeyMap = {
+    masa: { 'clásica': 'clasica', 'integral': 'integral', 'de maíz': 'maiz' },
+    relleno: { 'carne': 'carne', 'pollo': 'pollo', 'queso': 'queso', 'verduras': 'verduras' },
+    coccion: { 'al horno': 'horno', 'frita': 'frita' },
+    repulgue: { 'tradicional': 'tradicional', 'de corazones': 'corazones', 'de estrellas': 'estrellas' }
+  };
 
-    const m = masaColors[masa];
-    const r = rellenoColors[relleno];
-    const uid = Math.random().toString(36).slice(2, 7);
+  function stateToPath(state) {
+    const m = localKeyMap.masa[state.masa];
+    const r = localKeyMap.relleno[state.relleno];
+    const c = localKeyMap.coccion[state.coccion];
+    const p = localKeyMap.repulgue[state.repulgue];
+    return `img/empanadas/${m}__${r}__${c}__${p}.jpg`;
+  }
 
-    const edgePath = [];
-    const bumps = 12;
-    for (let i = 0; i <= bumps; i++) {
-      const t = i / bumps;
-      const x = 70 + t * 260;
-      const y = 260 - Math.sin(t * Math.PI) * 135;
-      if (repulgue === 'tradicional') {
-        const by = y - (i % 2 === 0 ? 6 : -2);
-        edgePath.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${by.toFixed(1)}`);
-      } else if (repulgue === 'de corazones') {
-        const bump = (i % 2 === 0 ? -7 : 0);
-        edgePath.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${(y + bump).toFixed(1)}`);
-      } else {
-        const spike = (i % 2 === 0 ? -8 : 1);
-        edgePath.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${(y + spike).toFixed(1)}`);
-      }
+  function buildImageCandidates(sel) {
+    const masas = ['clásica', 'integral', 'de maíz'];
+    const repulgues = ['tradicional', 'de corazones', 'de estrellas'];
+    const cocciones = ['al horno', 'frita'];
+    const rellenos = ['carne', 'pollo', 'queso', 'verduras'];
+    const list = [];
+    const seen = new Set();
+    const add = (p) => { if (!seen.has(p)) { seen.add(p); list.push(p); } };
+    const addState = (s) => add(stateToPath(s));
+
+    // 1) exacta
+    addState(sel);
+    // 2) misma masa/relleno/cocción con otro repulgue
+    repulgues.forEach(p => addState({ ...sel, repulgue: p }));
+    // 3) mismo relleno+cocción (lo más visible), variando masa/repulgue
+    masas.forEach(m => repulgues.forEach(p => addState({ masa: m, relleno: sel.relleno, coccion: sel.coccion, repulgue: p })));
+    // 4) fotos base reales por relleno+cocción (cambian claramente con tu elección)
+    add(`img/empanadas/base_clasica__${localKeyMap.relleno[sel.relleno]}__${localKeyMap.coccion[sel.coccion]}__tradicional.jpg`);
+    // 5) mismo relleno, otra cocción
+    cocciones.forEach(c => {
+      masas.forEach(m => repulgues.forEach(p => addState({ masa: m, relleno: sel.relleno, coccion: c, repulgue: p })));
+      add(`img/empanadas/base_clasica__${localKeyMap.relleno[sel.relleno]}__${localKeyMap.coccion[c]}__tradicional.jpg`);
+    });
+    // 6) cualquier foto base real
+    rellenos.forEach(r => cocciones.forEach(c => add(`img/empanadas/base_clasica__${localKeyMap.relleno[r]}__${localKeyMap.coccion[c]}__tradicional.jpg`)));
+    // 7) cualquier imagen existente
+    masas.forEach(m => rellenos.forEach(r => cocciones.forEach(c => repulgues.forEach(p => addState({ masa: m, relleno: r, coccion: c, repulgue: p })))));
+    add('img/empanadas/probe.jpg');
+    add('img/empanadas/test.jpg');
+    return list;
+  }
+
+  function tryLoadImage(candidates, index, alt, summaryBase, exactPath) {
+    if (index >= candidates.length) {
+      buildPreview.innerHTML = `
+        <div class="preview-placeholder">
+          <div class="empanada-art" aria-hidden="true">🥟</div>
+          <p>No se encontró una foto para esta combinación. Intenta de nuevo en un momento.</p>
+        </div>`;
+      buildCookBtn.disabled = false;
+      buildCookBtn.textContent = 'Ver empanada';
+      return;
     }
-    const edgeD = edgePath.join(' ');
-
-    const heartDecor = repulgue === 'de corazones'
-      ? `<g fill="${m.edge}" opacity="0.55">${[110,150,190,230,270].map((x,i)=>`<path d="M${x} ${228-i%2*4}c-4-6-14-3-14 4 0 8 14 14 14 14s14-6 14-14c0-7-10-9-14-4z"/>`).join('')}</g>`
-      : '';
-    const starDecor = repulgue === 'de estrellas'
-      ? `<g fill="${m.edge}" opacity="0.55">${[110,150,190,230,270].map((x,i)=>`<polygon points="${x},${220-i%2*4} ${x+3},${228-i%2*4} ${x+11},${228-i%2*4} ${x+5},${233-i%2*4} ${x+7},${241-i%2*4} ${x},${236-i%2*4} ${x-7},${241-i%2*4} ${x-5},${233-i%2*4} ${x-11},${228-i%2*4} ${x-3},${228-i%2*4}"/>`).join('')}</g>`
-      : '';
-
-    const spots = cook.spots
-      ? `<g opacity="0.18" fill="#7a3e00">
-          <ellipse cx="150" cy="190" rx="10" ry="6"/>
-          <ellipse cx="210" cy="170" rx="8" ry="5"/>
-          <ellipse cx="250" cy="200" rx="9" ry="5"/>
-          <ellipse cx="185" cy="215" rx="7" ry="4"/>
-        </g>` : '';
-
-    const fillingBits = relleno === 'verduras'
-      ? `<circle cx="255" cy="215" r="10" fill="${r[0]}"/><circle cx="272" cy="222" r="8" fill="${r[1]}"/><circle cx="262" cy="232" r="7" fill="${r[2]}"/><rect x="240" y="228" width="10" height="6" rx="2" fill="#6aa84f"/>`
-      : `<ellipse cx="262" cy="222" rx="18" ry="12" fill="${r[0]}"/><ellipse cx="275" cy="232" rx="12" ry="8" fill="${r[1]}"/><ellipse cx="248" cy="232" rx="10" ry="7" fill="${r[2]}"/>`;
-
-    return `
-      <div class="empanada-scene">
-        <svg viewBox="0 0 400 320" role="img" aria-label="Empanada de ${relleno} con masa ${masa}, ${coccion}, repulgue ${repulgue}" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="bg-${uid}" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#fff7e8"/>
-              <stop offset="100%" stop-color="#f7e7c4"/>
-            </linearGradient>
-            <radialGradient id="dough-${uid}" cx="35%" cy="30%" r="70%">
-              <stop offset="0%" stop-color="${m.highlight}"/>
-              <stop offset="55%" stop-color="${m.base}"/>
-              <stop offset="100%" stop-color="${m.shadow}"/>
-            </radialGradient>
-            <filter id="shadow-${uid}" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#8a5a2b" flood-opacity="0.25"/>
-            </filter>
-          </defs>
-          <rect width="400" height="320" fill="url(#bg-${uid})"/>
-          <ellipse cx="200" cy="275" rx="135" ry="22" fill="#d9c7a3" opacity="0.7"/>
-          <ellipse cx="200" cy="265" rx="150" ry="26" fill="#fff" opacity="0.9"/>
-          <ellipse cx="200" cy="265" rx="150" ry="26" fill="none" stroke="#eadfca" stroke-width="4"/>
-          <g filter="url(#shadow-${uid})">
-            <path d="M70 260 C70 150, 150 95, 200 95 C250 95, 330 150, 330 260 Z" fill="url(#dough-${uid})" stroke="${m.edge}" stroke-width="3"/>
-            <path d="M228 205 C250 190, 292 205, 292 232 C285 248, 255 252, 238 242 Z" fill="${m.shadow}" opacity="0.55"/>
-            ${fillingBits}
-            <path d="${edgeD}" fill="none" stroke="${m.edge}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="${edgeD}" fill="none" stroke="${m.highlight}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
-            ${heartDecor}
-            ${starDecor}
-            <path d="M90 245 C110 165, 165 120, 205 112" fill="none" stroke="${cook.shine}" stroke-width="10" stroke-linecap="round" opacity="0.6"/>
-            <path d="M70 260 C70 150, 150 95, 200 95 C250 95, 330 150, 330 260 Z" fill="${cook.overlay}"/>
-            ${spots}
-          </g>
-          <g transform="translate(292,34)">
-            <rect x="0" y="0" rx="10" ry="10" width="92" height="30" fill="#ffffff" opacity="0.85"/>
-            <text x="46" y="20" text-anchor="middle" font-size="13" font-family="Trebuchet MS,Segoe UI,sans-serif" fill="#7a3e00" font-weight="700">${coccion}</text>
-          </g>
-        </svg>
-        <div class="empanada-badges">
-          <span class="badge">Masa: ${masa}</span>
-          <span class="badge">Relleno: ${relleno}</span>
-          <span class="badge">Repulgue: ${repulgue}</span>
-        </div>
-      </div>`;
+    const path = candidates[index];
+    const img = new Image();
+    img.alt = alt;
+    img.onload = () => {
+      const isExact = path === exactPath;
+      const baseForSame = path.indexOf(`base_clasica__${localKeyMap.relleno[buildState.relleno]}__${localKeyMap.coccion[buildState.coccion]}__`) !== -1;
+      buildPreview.innerHTML = `
+        <figure class="image-frame">
+          <img src="${path}" alt="${alt}">
+        </figure>`;
+      if (isExact) {
+        buildSummary.textContent = summaryBase;
+      } else if (baseForSame) {
+        buildSummary.textContent = summaryBase + ' (foto real de tu relleno y cocción)';
+      } else {
+        buildSummary.textContent = summaryBase + ' (foto real similar)';
+      }
+      buildCookBtn.disabled = false;
+      buildCookBtn.textContent = 'Ver empanada';
+    };
+    img.onerror = () => tryLoadImage(candidates, index + 1, alt, summaryBase, exactPath);
+    img.src = path;
   }
 
   function describeEmpanada() {
@@ -325,10 +303,22 @@
       buildSummary.textContent = '';
       return;
     }
+
+    const exactPath = stateToPath(buildState);
+    const candidates = buildImageCandidates(buildState);
+    const alt = `Empanada de ${relleno} con masa ${masa}, ${coccion} y repulgue ${repulgue}`;
     const summaryBase = `Empanada de ${relleno} con masa ${masa}, ${coccion} y repulgue ${repulgue}.`;
+
+    buildCookBtn.disabled = true;
+    buildCookBtn.textContent = 'Preparando...';
     buildSummary.textContent = summaryBase;
-    buildPreview.innerHTML = renderEmpanadaSVG(buildState);
-    buildCookBtn.textContent = 'Ver otra vez';
+    buildPreview.innerHTML = `
+      <div class="image-frame loading">
+        <div class="loader" aria-hidden="true"></div>
+        <p>Preparando tu empanada...</p>
+      </div>`;
+
+    tryLoadImage(candidates, 0, alt, summaryBase, exactPath);
   }
 
   document.getElementById('build-cook').addEventListener('click', describeEmpanada);
@@ -336,6 +326,7 @@
     Object.keys(buildState).forEach(k => buildState[k] = null);
     document.querySelectorAll('.choice').forEach(b => b.classList.remove('selected'));
     buildSummary.textContent = '';
+    buildCookBtn.disabled = false;
     buildCookBtn.textContent = 'Ver empanada';
     buildPreview.innerHTML = `<div class="preview-placeholder"><div class="empanada-art" aria-hidden="true">🥟</div><p>Elige tus ingredientes y pulsa <strong>“Ver empanada”</strong> para ver tu empanada.</p></div>`;
   });
