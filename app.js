@@ -247,8 +247,8 @@
     }
 
     const prompt = buildEmpanadaPrompt(buildState);
-    const seed = Date.now();
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=768&seed=${seed}&model=flux&nologo=true&enhance=true`;
+    const seed = Math.floor(Math.random() * 1000000);
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=768&seed=${seed}&model=flux&nologo=true`;
 
     buildCookBtn.disabled = true;
     buildCookBtn.textContent = 'Creando imagen...';
@@ -260,16 +260,39 @@
       </div>`;
 
     const img = new Image();
+    img.referrerPolicy = 'no-referrer';
     img.alt = `Empanada de ${relleno} con masa ${masa}, ${coccion} y repulgue ${repulgue}`;
+
+    let settled = false;
+    const timeoutId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      img.onload = null;
+      img.onerror = null;
+      buildPreview.innerHTML = `
+        <div class="preview-placeholder">
+          <div class="empanada-art" aria-hidden="true">🥟</div>
+          <p>Está tardando mucho en generar la imagen. Intenta de nuevo en unos segundos.</p>
+        </div>`;
+      buildCookBtn.disabled = false;
+      buildCookBtn.textContent = 'Crear imagen';
+    }, 45000);
+
     img.onload = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
       buildPreview.innerHTML = `
         <figure class="image-frame">
-          <img src="${imageUrl}" alt="${img.alt}">
+          <img src="${imageUrl}" alt="${img.alt}" referrerpolicy="no-referrer" loading="eager">
         </figure>`;
       buildCookBtn.disabled = false;
       buildCookBtn.textContent = 'Crear otra imagen';
     };
     img.onerror = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
       buildPreview.innerHTML = `
         <div class="preview-placeholder">
           <div class="empanada-art" aria-hidden="true">🥟</div>
