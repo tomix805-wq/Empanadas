@@ -213,28 +213,19 @@
     });
   });
 
-  function buildEmpanadaPrompt({ masa, relleno, coccion, repulgue }) {
-    const masaMap = {
-      'clásica': 'golden wheat flour dough',
-      'integral': 'whole wheat dough with a rustic look',
-      'de maíz': 'corn dough (masa de maíz) with a warm yellow color'
-    };
-    const rellenoMap = {
-      'carne': 'filled with seasoned beef, visible through a small cut',
-      'pollo': 'filled with shredded chicken, visible through a small cut',
-      'queso': 'filled with melted cheese stretching out',
-      'verduras': 'filled with colorful vegetables like peppers, onion and spinach'
-    };
-    const coccionMap = {
-      'al horno': 'baked in the oven, lightly browned and matte',
-      'frita': 'fried until crispy and deep golden with a slight sheen'
-    };
-    const repulgueMap = {
-      'tradicional': 'classic braided crimped edge (repulgue tradicional)',
-      'de corazones': 'crimped edge shaped with small heart patterns',
-      'de estrellas': 'crimped edge shaped with small star patterns'
-    };
-    return `Ultra realistic food photography of a single delicious Argentine empanada on a ceramic plate, ${masaMap[masa]}, ${rellenoMap[relleno]}, ${coccionMap[coccion]}, ${repulgueMap[repulgue]}, appetizing, warm studio lighting, shallow depth of field, wooden table background, high detail, professional food photo`;
+  const localKeyMap = {
+    masa: { 'clásica': 'clasica', 'integral': 'integral', 'de maíz': 'maiz' },
+    relleno: { 'carne': 'carne', 'pollo': 'pollo', 'queso': 'queso', 'verduras': 'verduras' },
+    coccion: { 'al horno': 'horno', 'frita': 'frita' },
+    repulgue: { 'tradicional': 'tradicional', 'de corazones': 'corazones', 'de estrellas': 'estrellas' }
+  };
+
+  function localImagePath({ masa, relleno, coccion, repulgue }) {
+    const m = localKeyMap.masa[masa];
+    const r = localKeyMap.relleno[relleno];
+    const c = localKeyMap.coccion[coccion];
+    const p = localKeyMap.repulgue[repulgue];
+    return `img/empanadas/${m}__${r}__${c}__${p}.jpg`;
   }
 
   function describeEmpanada() {
@@ -246,60 +237,34 @@
       return;
     }
 
-    const prompt = buildEmpanadaPrompt(buildState);
-    const seed = Math.floor(Math.random() * 1000000);
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=768&seed=${seed}&model=flux&nologo=true`;
-
+    const imageUrl = localImagePath(buildState);
     buildCookBtn.disabled = true;
-    buildCookBtn.textContent = 'Creando imagen...';
+    buildCookBtn.textContent = 'Preparando...';
     buildSummary.textContent = `Empanada de ${relleno} con masa ${masa}, ${coccion} y repulgue ${repulgue}.`;
     buildPreview.innerHTML = `
       <div class="image-frame loading">
         <div class="loader" aria-hidden="true"></div>
-        <p>Creando la imagen real de tu empanada...</p>
+        <p>Preparando tu empanada...</p>
       </div>`;
 
     const img = new Image();
-    img.referrerPolicy = 'no-referrer';
     img.alt = `Empanada de ${relleno} con masa ${masa}, ${coccion} y repulgue ${repulgue}`;
-
-    let settled = false;
-    const timeoutId = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      img.onload = null;
-      img.onerror = null;
-      buildPreview.innerHTML = `
-        <div class="preview-placeholder">
-          <div class="empanada-art" aria-hidden="true">🥟</div>
-          <p>Está tardando mucho en generar la imagen. Intenta de nuevo en unos segundos.</p>
-        </div>`;
-      buildCookBtn.disabled = false;
-      buildCookBtn.textContent = 'Crear imagen';
-    }, 45000);
-
     img.onload = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeoutId);
       buildPreview.innerHTML = `
         <figure class="image-frame">
-          <img src="${imageUrl}" alt="${img.alt}" referrerpolicy="no-referrer" loading="eager">
+          <img src="${imageUrl}" alt="${img.alt}">
         </figure>`;
       buildCookBtn.disabled = false;
-      buildCookBtn.textContent = 'Crear otra imagen';
+      buildCookBtn.textContent = 'Ver empanada';
     };
     img.onerror = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeoutId);
       buildPreview.innerHTML = `
         <div class="preview-placeholder">
           <div class="empanada-art" aria-hidden="true">🥟</div>
-          <p>No se pudo crear la imagen en este momento. Revisa tu conexión e inténtalo de nuevo.</p>
+          <p>No encontré la imagen para esta combinación todavía. Asegúrate de que la carpeta <strong>img/empanadas</strong> tenga las imágenes generadas.</p>
         </div>`;
       buildCookBtn.disabled = false;
-      buildCookBtn.textContent = 'Crear imagen';
+      buildCookBtn.textContent = 'Ver empanada';
     };
     img.src = imageUrl;
   }
@@ -310,8 +275,8 @@
     document.querySelectorAll('.choice').forEach(b => b.classList.remove('selected'));
     buildSummary.textContent = '';
     buildCookBtn.disabled = false;
-    buildCookBtn.textContent = 'Crear imagen';
-    buildPreview.innerHTML = `<div class="preview-placeholder"><div class="empanada-art" aria-hidden="true">🥟</div><p>Elige tus ingredientes y pulsa <strong>“Crear imagen”</strong> para ver tu empanada de verdad.</p></div>`;
+    buildCookBtn.textContent = 'Ver empanada';
+    buildPreview.innerHTML = `<div class="preview-placeholder"><div class="empanada-art" aria-hidden="true">🥟</div><p>Elige tus ingredientes y pulsa <strong>“Ver empanada”</strong> para ver tu empanada.</p></div>`;
   });
 
   // ---------- Verdadero o Falso ----------
